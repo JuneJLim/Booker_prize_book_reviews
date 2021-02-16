@@ -1,4 +1,4 @@
-# Effect of Literary Awards on Reader Response
+# Effect of Literary Awards on Reader Response 
 
 ![image](https://github.com/JuneJLim/Booker_prize_book_reviews/blob/main/image/graph1.jpg?raw=true)
 ![image](https://github.com/JuneJLim/Booker_prize_book_reviews/blob/main/image/graph2.jpg?raw=true)
