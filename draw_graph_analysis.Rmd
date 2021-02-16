@@ -1,0 +1,237 @@
+---
+title: "book_reviews_mean_graph"
+author: "Jungeun Lim"
+date: "March 25, 2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(dplyr)
+library(FSA)
+library(scales)
+library(broom)
+library(tidyverse)
+library(stargazer)
+```
+
+```{r, include = FALSE, echo = FALSE}
+getwd()
+data_gr <- read.csv(file = './all_ratings_gr_to2018.csv')
+data_c_gr <- read.csv(file = './final_data_gr.csv')
+
+```
+
+```{r}
+summary(data_c_gr)
+```
+
+```{r}
+data_c_gr <- 
+  data_c_gr %>% 
+  rowwise() %>% 
+  mutate(winner = case_when(
+    status == 'winner_before' ~ 1,
+    status == 'winner_after' ~ 1,
+    status == 'nominee_before' ~ 0,
+    status == 'nominee_after' ~ 0,
+    )
+    )
+data_c_gr <- 
+  data_c_gr %>% 
+  rowwise() %>% 
+  mutate(after = case_when(
+    status == 'winner_before' ~ 0,
+    status == 'winner_after' ~ 1,
+    status == 'nominee_before' ~ 0,
+    status == 'nominee_after' ~ 1,
+    )
+    )
+data_gr <- 
+  data_gr %>% 
+  rowwise() %>% 
+  mutate(winner = case_when(
+    status == 'winner_before' ~ 1,
+    status == 'winner_after' ~ 1,
+    status == 'nominee_before' ~ 0,
+    status == 'nominee_after' ~ 0,
+    )
+    )
+data_gr <- 
+  data_gr %>% 
+  rowwise() %>% 
+  mutate(after = case_when(
+    status == 'winner_before' ~ 0,
+    status == 'winner_after' ~ 1,
+    status == 'nominee_before' ~ 0,
+    status == 'nominee_after' ~ 1,
+    )
+    )
+```
+
+```{r}
+data_gr_eng <- data_gr[data_gr$eng_or_int == "eng",]
+data_gr_int <- data_gr[data_gr$eng_or_int == "int",]
+data_c_gr_eng <- data_c_gr[data_c_gr$eng_or_int == "eng",]
+data_c_gr_int <- data_c_gr[data_c_gr$eng_or_int == "int",]
+```
+
+```{r}
+sum_count_gr_eng = Summarize(review_count ~ status,
+                          data=data_c_gr_eng)
+sum_count_gr_int = Summarize(review_count ~ status,
+                          data=data_c_gr_int)
+
+sum_count_gr_eng$se = sum_count_gr_eng$sd / sqrt(sum_count_gr_eng$n)
+sum_count_gr_int$se = sum_count_gr_int$sd / sqrt(sum_count_gr_int$n)
+
+```
+
+
+```{r}
+sum_rating_gr_eng = Summarize(review_rating ~ status,
+                data=data_gr_eng)
+sum_rating_gr_int = Summarize(review_rating ~ status,
+                           data=data_gr_int)
+sum_rating_gr_eng$se = sum_rating_gr_eng$sd / sqrt(sum_rating_gr_eng$n)
+sum_rating_gr_int$se = sum_rating_gr_int$sd / sqrt(sum_rating_gr_int$n)
+```
+
+```{r}
+# How much to jitter the bars on the plot
+pd = position_dodge(2)
+```
+
+```{r}
+sum_count_gr_eng %>% mutate(status = factor(status, levels = c("winner_before", "winner_after", "nominee_before",
+                                                            "nominee_after"))) %>%
+  ggplot(aes(x     = status,
+             y     = mean
+  )) +
+  
+  geom_bar(stat     = "identity",
+           color    = "black",
+           position = pd,
+           fill = "white") +
+  
+  geom_errorbar(aes(ymin  = mean - se,
+                    ymax  = mean + se),
+                width = 0.2,
+                size  = 0.7,
+                position = pd,
+                color = "black"
+  ) +
+  
+  scale_y_continuous(limits=c(0,300), oob = rescale_none) +
+  theme_bw() +
+  theme(axis.title = element_text(face = "bold")) + ylab("Review Count") + xlab("Award and Status") +
+  scale_x_discrete(labels=c("Award winner \nbefore", "Award winner \nafter", "Short-listed \nbefore", "Short-listed \nafter")) +
+  ggtitle("Booker Prize: \nReview counts on Goodreads.com")
+```
+
+
+```{r}
+sum_count_gr_int %>% mutate(status = factor(status, levels = c("winner_before", "winner_after", "nominee_before",
+                                                            "nominee_after"))) %>%
+  ggplot(aes(x     = status,
+             y     = mean
+  )) +
+  
+  geom_bar(stat     = "identity",
+           color    = "black",
+           position = pd) +
+  
+  geom_errorbar(aes(ymin  = mean - se,
+                    ymax  = mean + se),
+                width = 0.2,
+                size  = 0.7,
+                position = pd,
+                color = "black"
+  ) +
+  scale_y_continuous(limits=c(0,300), oob = rescale_none) +
+  theme_bw() +
+  theme(axis.title = element_text(face = "bold")) + ylab("Review Count") + xlab("Award and Status") +
+  scale_x_discrete(labels=c("Award winner \nbefore", "Award winner \nafter", "Short-listed \nbefore", "Short-listed \nafter")) +
+  ggtitle("International Booker Prize: \nReview counts on Goodreads.com")
+```
+
+```{r}
+sum_rating_gr_eng %>% mutate(status = factor(status, levels = c("winner_before", "winner_after", "nominee_before",
+                                                             "nominee_after"))) %>%
+  ggplot(aes(x     = status,
+             y     = mean)) +
+  
+  geom_bar(stat     = "identity",
+           color    = "black",
+           position = pd,
+           fill = "white") +
+  
+  geom_errorbar(aes(ymin  = mean - se,
+                    ymax  = mean + se),
+                width = 0.2,
+                size  = 0.7,
+                position = pd,
+                color = "black"
+  ) +
+  
+  scale_y_continuous(limits=c(3,4), oob = rescale_none) +
+  theme_bw() +
+  theme(axis.title = element_text(face = "bold")) + ylab("Review Rating") + xlab("Award and Status") +
+  scale_x_discrete(labels=c("Award winner \nbefore", "Award winner \nafter", "Short-listed \nbefore", "Short-listed \nafter")) +
+  ggtitle("Booker Prize: \nReview ratings on Goodreads.com")
+```
+
+```{r}
+sum_rating_gr_int %>% mutate(status = factor(status, levels = c("winner_before", "winner_after", "nominee_before",
+                                                             "nominee_after"))) %>%
+  ggplot(aes(x     = status,
+             y     = mean)) +
+  
+  geom_bar(stat     = "identity",
+           color    = "black",
+           position = pd) +
+  
+  geom_errorbar(aes(ymin  = mean - se,
+                    ymax  = mean + se),
+                width = 0.2,
+                size  = 0.7,
+                position = pd,
+                color = "black"
+  ) +
+  
+  scale_y_continuous(limits=c(3,4), oob = rescale_none) +
+  theme_bw() +
+  theme(axis.title = element_text(face = "bold")) + ylab("Review Rating") + xlab("Award and Status") +
+  scale_x_discrete(labels=c("Award winner \nbefore", "Award winner \nafter", "Short-listed \nbefore", "Short-listed \nafter")) +
+  ggtitle("International Booker Prize: \nReview ratings on Goodreads.com")
+```
+
+```{r}
+data_gr_int_rm <- lm(review_rating ~ winner*after, 
+                         data = data_gr_int)
+
+stargazer(data_gr_int_rm, type='text')
+```
+
+```{r}
+data_gr_eng_rm <- lm(review_rating ~ winner*after, 
+                         data = data_gr_eng)
+
+stargazer(data_gr_eng_rm, type='text')
+```
+
+```{r}
+data_c_gr_eng_rm <- lm(review_count ~ winner*after, 
+                         data = data_c_gr_eng)
+
+stargazer(data_c_gr_eng_rm, type='text')
+```
+
+```{r}
+data_c_gr_int_rm <- lm(review_count ~ winner*after, 
+                         data = data_c_gr_int)
+
+stargazer(data_c_gr_int_rm, type='text')
+```
+
